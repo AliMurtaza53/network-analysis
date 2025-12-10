@@ -273,52 +273,72 @@ class Network:
       
       return (backlink, cost)
       
-   def shortestPath(self, origin):
-      """
-      This method finds the shortest path in a network which may or may not have
-      cycles; thus you cannot assume that a topological order exists.
-      
-      The implementation in the text uses a vector of backnode labels. We use back-LINK labels instead.  
-      The idea is exactly the same, except you are storing the ID of the last *link* in a shortest
-      path to each node.
+   def shortestPath_label(self, origin):
+      """Original label-setting shortest path implementation (kept for comparison).
 
-      Use the 'cost' attribute of the Links to calculate travel times.  These values
-      are given -- do not try to recalculate them based on flows, BPR functions, etc.
-            
-      The backlink and cost labels are both stored in dict's, whose keys are
-      node IDs.
-
-      *** BE SURE YOUR IMPLEMENTATION RESPECTS THE FIRST THROUGH NODE!
-      *** Travelers should not be able to use "centroid connectors" as shortcuts,
-      *** and the shortest path tree should reflect this.
-      
-      You should use the macro utils.NO_PATH_EXISTS to initialize backlink labels,
-      and utils.INFINITY to initialize cost labels.
+      Returns (backlink, cost) where backlink stores the last link id on the
+      shortest path to each node and cost stores the least-cost to each node.
       """
       backlink = {node_id: utils.NO_PATH_EXISTS for node_id in self.node}
       cost = {node_id: utils.INFINITY for node_id in self.node}
       cost[origin] = 0
-      
+
       scanList = {self.link[ij].head for ij in self.node[origin].forwardStar}
-      
+
       while scanList:
-          i = scanList.pop()
-          labelChanged = False
-          for hi in self.node[i].reverseStar:
-              h = self.link[hi].tail
-              if h < self.firstThroughNode and h != origin:
-                  continue
-              tempCost = cost[h] + self.link[hi].cost
-              if tempCost < cost[i]:
-                  cost[i] = tempCost
-                  backlink[i] = hi
-                  labelChanged = True
-          if labelChanged:
-              scanList.update(self.link[ij].head for ij in self.node[i].forwardStar if self.link[ij].head not in scanList)
-      
+         i = scanList.pop()
+         labelChanged = False
+         for hi in self.node[i].reverseStar:
+            h = self.link[hi].tail
+            if h < self.firstThroughNode and h != origin:
+               continue
+            tempCost = cost[h] + self.link[hi].cost
+            if tempCost < cost[i]:
+               cost[i] = tempCost
+               backlink[i] = hi
+               labelChanged = True
+         if labelChanged:
+            scanList.update(self.link[ij].head for ij in self.node[i].forwardStar if self.link[ij].head not in scanList)
+
       return backlink, cost
+
+   def shortestPath_heap(self, origin):
+      """Heap-based Dijkstra shortest path (label-setting with priority queue).
+
+      This is typically much faster on sparse networks, and respects
+      `firstThroughNode` by preventing expansion from centroid connector nodes
+      (nodes with id < firstThroughNode) except for the origin.
+      Returns (backlink, cost) like the original implementation.
+      """
+      backlink = {node_id: utils.NO_PATH_EXISTS for node_id in self.node}
+      cost = {node_id: utils.INFINITY for node_id in self.node}
+      cost[origin] = 0
+
+      heap = [(0, origin)]
+
+      while heap:
+         cur_cost, u = heapq.heappop(heap)
+         if cur_cost > cost[u]:
+            continue
+         # If this node is a centroid connector (forbidden to be an intermediate)
+         # and not the origin, do not expand its outgoing links.
+         if u < self.firstThroughNode and u != origin:
+            continue
+         for ij in self.node[u].forwardStar:
+            v = self.link[ij].head
+            tempCost = cost[u] + self.link[ij].cost
+            if tempCost < cost[v]:
+               cost[v] = tempCost
+               backlink[v] = ij
+               heapq.heappush(heap, (tempCost, v))
+
+      return backlink, cost
+
+   def shortestPath(self, origin):
+      """Default shortest path API (uses heap-based Dijkstra for performance)."""
+      return self.shortestPath_heap(origin)
       
-   def allOrNothing(self):
+   def allOrNothing(self, use_heap=True):
       """
       This method generates an all-or-nothing assignment using the current link
       cost values.  It must do the following:
@@ -335,13 +355,16 @@ class Network:
       """
       allOrNothing = {ij: 0 for ij in self.link}
       for origin in range(1, self.numZones + 1):
-          backlink, _ = self.shortestPath(origin)
-          for OD in [OD for OD in self.ODpair if self.ODpair[OD].origin == origin]:
-              curnode = self.ODpair[OD].destination
-              while curnode != self.ODpair[OD].origin:
-                  allOrNothing[backlink[curnode]] += self.ODpair[OD].demand
-                  curnode = self.link[backlink[curnode]].tail
-      
+         if use_heap:
+            backlink, _ = self.shortestPath_heap(origin)
+         else:
+            backlink, _ = self.shortestPath_label(origin)
+         for OD in [OD for OD in self.ODpair if self.ODpair[OD].origin == origin]:
+            curnode = self.ODpair[OD].destination
+            while curnode != self.ODpair[OD].origin:
+               allOrNothing[backlink[curnode]] += self.ODpair[OD].demand
+               curnode = self.link[backlink[curnode]].tail
+
       return allOrNothing
                   
    def findLeastEnteringLinks(self):

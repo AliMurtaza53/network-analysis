@@ -1,0 +1,14 @@
+SiouxFalls equilibrium comparison summary
+========================================
+
+Label-setting final relative gap: 9.121757e-05
+Heap-Dijkstra final relative gap: 9.314710e-05
+
+Label runtime (from compare CSV): 419.055383 s, iterations 10000
+Heap runtime (from compare CSV): 401.428713 s, iterations 10000
+
+Relative gap ratio (label / heap): 0.979x
+
+Notes:
+- Both runs used MSA step-size (1/(k+1)).
+- CSVs used: C:\Users\akothaw\Projects\network-analysis\bench_results_siouxfalls_label.csv, C:\Users\akothaw\Projects\network-analysis\bench_results_siouxfalls_heap.csv
