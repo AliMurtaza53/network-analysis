@@ -65,12 +65,11 @@ class Network:
  
    def relativeGap(self):
       """
-      This method should calculate the relative gap (as defined in the course text)
+      This method should calculate the relative gap (as defined in Boyles et al. 2025)
       based on the current link flows, and return this value.
       
       To do this, you will need to calculate both the total system travel time, and
-      the shortest path travel time (you will find it useful to call some of the
-      methods implemented in earlier assignments).
+      the shortest path travel time.
       """
       TSTT = sum(self.link[ij].flow * self.link[ij].cost for ij in self.link)
       SPTT = sum(self.ODpair[OD].demand * self.shortestPath(self.ODpair[OD].origin)[1][self.ODpair[OD].destination] for OD in self.ODpair)
@@ -85,9 +84,8 @@ class Network:
       This method should calculate the average excess cost
       based on the current link flows, and return this value.
       
-      To do this, you will need to calculate both the total system travel time, and
-      the shortest path travel time (you will find it useful to call some of the
-      methods implemented in earlier assignments).
+      To do this, calculate both the total system travel time, and
+      the shortest path travel time.
       """
       TSTT = sum(self.link[ij].flow * self.link[ij].cost for ij in self.link)
   
