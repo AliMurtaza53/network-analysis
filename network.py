@@ -68,7 +68,7 @@ class Network:
       This method should calculate the relative gap (as defined in Boyles et al. 2025)
       based on the current link flows, and return this value.
       
-      To do this, you will need to calculate both the total system travel time, and
+      To do this, we calculate both the total system travel time, and
       the shortest path travel time.
       """
       TSTT = sum(self.link[ij].flow * self.link[ij].cost for ij in self.link)
@@ -169,8 +169,7 @@ class Network:
       for user equilibrium.  Arguments are the following:
          stepSizeRule -- a string specifying how the step size lambda is
                          to be chosen.  Currently 'FW' and 'MSA' are the
-                         available choices, but you can implement more if you
-                         want.
+                         available choices.
          maxIterations -- stop after this many iterations have been performed
          targetGap     -- stop once the gap is below this level
          gapFunction   -- pointer to the function used to calculate gap.  After
@@ -201,7 +200,7 @@ class Network:
               stepSize = self.FrankWolfeStepSize(targetFlows)
           elif stepSizeRule == 'MSA':
               if stepType == 'natural':
-                  stepSize = 1 / (iteration + 1)  # change me for q1
+                  stepSize = 1 / (iteration + 1) 
               elif stepType == 'squares':
                   stepSize = 1 / (iteration ** 2 + 1)
               else:
@@ -230,9 +229,8 @@ class Network:
    def acyclicShortestPath(self, origin):
       """
       This method finds the shortest path in an acyclic network, from the stated
-      origin.  You can assume that a topological order has already been found,
-      and referred to in the 'order' attributes of network Nodes.  You can also
-      find a list of nodes in topological order in self.topologicalList.  (See the
+      origin.  Assume that a topological order has already been found,
+      and referred to in the 'order' attributes of network Nodes.  Find a list of nodes in topological order in self.topologicalList.  (See the
       method createTopologicalList below.)
       
       Use the 'cost' attribute of the Links to calculate travel times.  These values
@@ -242,10 +240,7 @@ class Network:
       convention in network modeling that the topological order starts at 1, whereas
       Python starts numbering at 0.  
       
-      The implementation in the text uses a vector of backnode labels.  In this
-      assignment, you should use back-LINK labels instead.  The idea is exactly
-      the same, except you are storing the ID of the last *link* in a shortest
-      path to each node.
+      The implementation in the text uses a vector of backnode labels.
       
       The backlink and cost labels are both stored in dict's, whose keys are
       node IDs.
@@ -283,9 +278,8 @@ class Network:
       This method finds the shortest path in a network which may or may not have
       cycles; thus you cannot assume that a topological order exists.
       
-      The implementation in the text uses a vector of backnode labels.  In this
-      assignment, you should use back-LINK labels instead.  The idea is exactly
-      the same, except you are storing the ID of the last *link* in a shortest
+      The implementation in the text uses a vector of backnode labels. We use back-LINK labels instead.  
+      The idea is exactly the same, except you are storing the ID of the last *link* in a shortest
       path to each node.
 
       Use the 'cost' attribute of the Links to calculate travel times.  These values
@@ -334,12 +328,10 @@ class Network:
       The resulting link flows should be returned in the allOrNothing dict, whose
       keys are the link IDs.
 
-      Be aware that the network files are in the TNTP format, where nodes are numbered
+      Network files are in the TNTP format, where nodes are numbered
       starting at 1, whereas Python starts numbering at 0.  
             
-      Your code will not be scored based on efficiency, but you should think about
-      different ways of finding an all-or-nothing loading, and how this might
-      best be done.
+      One could optimize for even more efficient all-or-nothing loading.
       """
       allOrNothing = {ij: 0 for ij in self.link}
       for origin in range(1, self.numZones + 1):
@@ -367,7 +359,7 @@ class Network:
    
    def formAdjacencyMatrix(self):
       """
-      This method should produce an adjacency matrix, with rows and columns
+      This method produces an adjacency matrix, with rows and columns
       corresponding to each node, and entries of 1 if there is a link connecting
       the row node to the column node, and 0 otherwise.  This matrix should
       be stored in self.adjacencyMatrix, which is a dictionary of dictionaries:
@@ -395,7 +387,7 @@ class Network:
       
       If the network has cycles, a topological order does not exist.  The presence
       of cycles can be detected in the algorithm for finding a topological order,
-      and you should raise an exception if this is detected.
+      and raises an exception if this is detected.
       """
       # This implementation temporarily messes with reverse stars, must fix at end
       numOrderedNodes = 0
