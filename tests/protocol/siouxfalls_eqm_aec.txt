@@ -1,0 +1,11 @@
+# Network file
+tests/SiouxFalls_net.txt
+
+# Trips file
+tests/SiouxFalls_trips.txt
+
+# Flows file (equilibrium)
+tests/relativegap/SiouxFalls_eqm_flows.txt
+
+# Expected answer (average excess cost at equilibrium)
+0.0

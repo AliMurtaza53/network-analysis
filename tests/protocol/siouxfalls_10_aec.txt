@@ -1,0 +1,11 @@
+# Network file
+tests/SiouxFalls_net.txt
+
+# Trips file
+tests/SiouxFalls_trips.txt
+
+# Flows file
+tests/relativegap/SiouxFalls_10_flows.txt
+
+# Expected answer (average excess cost)
+0.7192345440359234609

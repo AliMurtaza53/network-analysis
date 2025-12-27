@@ -4,14 +4,19 @@ Usage examples (run from repo root):
   python -m tests.run_protocol --tests tests/aec/4-SiouxFalls_10.txt --func averageExcessCost --runs 5 --output results.csv
   python -m tests.run_protocol --tests tests/aec/4-SiouxFalls_10.txt tests/aec/5-SiouxFalls_eqm.txt --func averageExcessCost --profile cprofile --profile-dir profs
 
+Test spec file format (non-comment lines):
+  Line 1: network file path
+  Line 2: trips file path
+  Line 3: flows file path
+  Line 4: expected answer (float)
+
 This script:
-- parses simple test spec files (same layout used by `tests.py` aec/relativegap/fwstepsize/convexcombo),
-- constructs `network.Network`, loads flows, computes the requested metric (calls a method on the Network object),
+- parses test spec files and constructs `network.Network`, loads flows, computes the requested metric,
 - measures execution time across repeated runs (mean/std),
 - optionally collects a cProfile for a single run and writes `.prof` files,
 - writes a CSV summary and optional JSON details.
 
-It intentionally avoids modifying existing `tests.py` so it can be used as a non-invasive harness.
+Used to compare baseline vs candidate implementations for merge decisions.
 """
 from __future__ import annotations
 import argparse
@@ -26,16 +31,21 @@ import io
 from typing import Dict, Tuple, List
 
 import network
-import tests as tests_module
 import utils
 
 
-def parse_aec_or_relativegap_spec(path: str) -> Tuple[int, str, str, str, float]:
+def approxEqual(value, target, tolerance):
+    """Check if value is approximately equal to target within tolerance."""
+    if (abs(target) <= tolerance): 
+        return abs(value) <= tolerance
+    return abs(float(value) / target - 1) <= tolerance
+
+
+def parse_aec_or_relativegap_spec(path: str) -> Tuple[str, str, str, float]:
     """Parse a simple spec file used by `aec` and `relativegap` tests.
 
-    Returns: (pointsPossible, networkFile, tripsFile, flowsFile, answer)
+    Returns: (networkFile, tripsFile, flowsFile, answer)
     """
-    pointsPossible = None
     networkFile = None
     tripsFile = None
     flowsFile = None
@@ -43,9 +53,6 @@ def parse_aec_or_relativegap_spec(path: str) -> Tuple[int, str, str, str, float]
     with open(path, "r") as f:
         for line in f.read().splitlines():
             if len(line.strip()) == 0 or line.lstrip().startswith('#'):
-                continue
-            if pointsPossible is None:
-                pointsPossible = int(line.strip())
                 continue
             if networkFile is None:
                 networkFile = os.path.normpath(line.strip())
@@ -59,7 +66,7 @@ def parse_aec_or_relativegap_spec(path: str) -> Tuple[int, str, str, str, float]
             if answer is None:
                 answer = float(line.strip())
                 continue
-    return pointsPossible, networkFile, tripsFile, flowsFile, answer
+    return networkFile, tripsFile, flowsFile, answer
 
 
 def read_flows_file(flowsFileName: str) -> Dict[str, float]:
@@ -76,9 +83,9 @@ def read_flows_file(flowsFileName: str) -> Dict[str, float]:
 def run_single_test(spec_path: str, func_name: str) -> Tuple[float, float, bool, Dict]:
     """Run the specified metric once and return (value, expected, pass, details).
 
-    details contains: networkFile, tripsFile, flowsFile, pointsPossible.
+    details contains: networkFile, tripsFile, flowsFile.
     """
-    points, netf, tripsf, flowsf, answer = parse_aec_or_relativegap_spec(spec_path)
+    netf, tripsf, flowsf, answer = parse_aec_or_relativegap_spec(spec_path)
     net = network.Network(netf, tripsf)
     flows = read_flows_file(flowsf)
     for ij in net.link:
@@ -89,9 +96,8 @@ def run_single_test(spec_path: str, func_name: str) -> Tuple[float, float, bool,
         raise AttributeError(f"Network has no attribute {func_name}")
     metric_func = getattr(net, func_name)
     value = metric_func()
-    passed = tests_module.approxEqual(value, answer, 0.01)
+    passed = approxEqual(value, answer, 0.01)
     details = {
-        "pointsPossible": points,
         "networkFile": netf,
         "tripsFile": tripsf,
         "flowsFile": flowsf,

@@ -558,7 +558,7 @@ class Network:
                   self.node[int(data[1])] = Node(True if int(data[1]) <= self.numZones else False)
          
       except IOError:
-         print("\nError reading network file %s" % networkFile)
+         print("\nError reading network file %s" % networkFileName)
          traceback.print_exc(file=sys.stdout) 
 
    def readDemandFile(self, demandFileName):
@@ -619,7 +619,7 @@ class Network:
                   self.totalDemand += demand      
                                     
       except IOError:
-         print("\nError reading network file %s" % networkFile)
+         print("\nError reading demand file %s" % demandFileName)
          traceback.print_exc(file=sys.stdout)       
             
    def validate(self):
