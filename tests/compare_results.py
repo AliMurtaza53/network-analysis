@@ -179,7 +179,14 @@ def main():
     results = compare_runs(baseline, candidate)
     
     if args.format == 'markdown':
-        print(format_markdown(results))
+        output = format_markdown(results)
+        # Handle console encoding issues on Windows
+        try:
+            print(output)
+        except UnicodeEncodeError:
+            # Fallback to ASCII-compatible output
+            output = output.replace('⚡', '*').replace('🐌', 'x').replace('✅', '[OK]').replace('❌', '[FAIL]').replace('⚠️', '[WARN]')
+            print(output)
     else:
         if args.output:
             write_csv(results, args.output)
