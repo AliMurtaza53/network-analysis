@@ -10,7 +10,7 @@ This directory contains tools for testing performance and accuracy of network an
 
 ## Quick Start
 
-### 1. Run performance tests
+### 1. Run performance tests (auto mode: numeric + flows)
 
 ```bash
 python -m tests.run_protocol \
@@ -21,7 +21,27 @@ python -m tests.run_protocol \
   --json results.json
 ```
 
-### 2. Compare implementations
+### 2. Run Frank-Wolfe step size (fwstep mode)
+
+```bash
+python -m tests.run_protocol \
+  --mode fwstep \
+  --tests tests/protocol/fw_siouxfalls.txt \
+  --runs 3 \
+  --output fw_results.csv
+```
+
+### 3. Run convex-combo flow shift (shift mode)
+
+```bash
+python -m tests.run_protocol \
+  --mode shift \
+  --tests tests/protocol/shift_siouxfalls_10.txt \
+  --runs 3 \
+  --output shift_results.csv
+```
+
+### 4. Compare implementations
 
 Run tests on baseline:
 ```bash
@@ -38,6 +58,23 @@ python -m tests.run_protocol --tests tests/protocol/siouxfalls_10_aec.txt --func
 Compare results:
 ```bash
 python -m tests.compare_results baseline.csv candidate.csv --format markdown
+```
+
+### 5. One-shot baseline vs candidate (side-by-side)
+
+Use two network implementations in one command and compare outputs:
+```bash
+python -m tests.compare_networks \
+  --mode auto \
+  --func averageExcessCost \
+  --tests tests/protocol/siouxfalls_10_aec.txt tests/protocol/siouxfalls_eqm_aec.txt \
+  --runs 5 \
+  --network-a path/to/network_baseline.py \
+  --network-b path/to/network_candidate.py \
+  --out-a baseline.csv \
+  --out-b candidate.csv \
+  --comparison comparison.csv \
+  --format markdown
 ```
 
 ### 3. Profile for hotspots
@@ -60,23 +97,42 @@ Test spec files use a simple format (comments allowed, non-comment lines):
 ```
 Line 1: network file path
 Line 2: trips file path
-Line 3: flows file path
-Line 4: expected answer (float)
+Line 3: flows file path (used to set link flows before measuring)
+Line 4: expected numeric answer (float) [optional]
+Line 5: answer flows file path [optional]
 ```
 
-Example:
+Rules:
+- Numeric-only: provide line 4 only.
+- Flows-only: skip numeric, provide line 4 as flows answer path.
+- Both: provide numeric on line 4 and flows answer on line 5. The test passes only if **both** checks pass.
+
+Combined numeric + flow example:
 ```
-# Network file
 tests/SiouxFalls_net.txt
-
-# Trips file
 tests/SiouxFalls_trips.txt
+tests/convexcombo/SiouxFalls_10_flows.txt
+0.7192345440359187
+tests/convexcombo/SiouxFalls_10_flows_answer.txt
+```
 
-# Flows file
-tests/relativegap/SiouxFalls_10_flows.txt
+Frank-Wolfe step size example (fwstep mode):
+```
+tests/SiouxFalls_net.txt
+tests/SiouxFalls_trips.txt
+tests/fwstepsize/SiouxFalls_current.txt
+tests/fwstepsize/SiouxFalls_target.txt
+0.21156509296270087
+```
 
-# Expected answer
-0.7192345440359234609
+Convex-combo shift example (shift mode):
+```
+tests/SiouxFalls_net.txt
+tests/SiouxFalls_trips.txt
+tests/convexcombo/SiouxFalls_10_flows.txt
+tests/convexcombo/SiouxFalls_eqm_flows.txt
+0.1
+tests/convexcombo/SiouxFalls_10_flows_answer.txt
 ```
 
 ## GitHub Actions Integration

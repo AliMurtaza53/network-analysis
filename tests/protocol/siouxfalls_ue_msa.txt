@@ -1,0 +1,17 @@
+# Network file
+tests/SiouxFalls_net.txt
+
+# Trips file
+tests/SiouxFalls_trips.txt
+
+# Step size rule (FW or MSA)
+MSA
+
+# Max iterations
+1000
+
+# Target gap
+0.0001
+
+# Gap function (relativeGap or averageExcessCost)
+averageExcessCost

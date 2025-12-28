@@ -1,0 +1,14 @@
+# Network file
+tests/SiouxFalls_net.txt
+
+# Trips file
+tests/SiouxFalls_trips.txt
+
+# Computed flows (candidate)
+tests/convexcombo/SiouxFalls_10_flows.txt
+
+# Expected numeric metric (average excess cost)
+0.7192345440359187
+
+# Answer flows (expected)
+tests/convexcombo/SiouxFalls_10_flows_answer.txt

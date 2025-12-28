@@ -28,6 +28,22 @@ env/
 .DS_Store
 Thumbs.db
 
+# Test outputs
+baseline.csv
+candidate.csv
+comparison.csv
+*.prof.txt
+flow_diffs/
+profiler_output/
+profs/
+fw_results.csv
+shift_results.csv
+test_protocol_results.csv
+ue_solve_test.csv
+ue_timing.csv
+flow_compare.csv
+tmp_net_override.csv
+
 # Project outputs (keep in repo, but can be regenerated)
 outputs/*.prof
 outputs/*.csv

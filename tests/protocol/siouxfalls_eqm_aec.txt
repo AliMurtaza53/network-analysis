@@ -9,3 +9,6 @@ tests/relativegap/SiouxFalls_eqm_flows.txt
 
 # Expected answer (average excess cost at equilibrium)
 0.0
+
+# Answer flows (for per-link comparison)
+tests/relativegap/SiouxFalls_eqm_flows.txt

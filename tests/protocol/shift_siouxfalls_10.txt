@@ -1,0 +1,13 @@
+# Convex-combo shift spec
+# Network
+tests/SiouxFalls_net.txt
+# Trips
+tests/SiouxFalls_trips.txt
+# Base flows
+tests/convexcombo/SiouxFalls_10_flows.txt
+# Target flows
+tests/convexcombo/SiouxFalls_eqm_flows.txt
+# Step size
+0.1
+# Answer flows (expected after shift)
+tests/convexcombo/SiouxFalls_10_flows_answer.txt

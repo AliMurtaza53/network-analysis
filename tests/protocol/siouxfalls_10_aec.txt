@@ -9,3 +9,6 @@ tests/relativegap/SiouxFalls_10_flows.txt
 
 # Expected answer (average excess cost)
 0.7192345440359234609
+
+# Answer flows (for per-link comparison)
+tests/relativegap/SiouxFalls_10_flows.txt

@@ -1,0 +1,11 @@
+# Frank-Wolfe step size spec
+# Network
+tests/SiouxFalls_net.txt
+# Trips
+tests/SiouxFalls_trips.txt
+# Base flows (current)
+tests/fwstepsize/SiouxFalls_current.txt
+# Target flows (all-or-nothing)
+tests/fwstepsize/SiouxFalls_target.txt
+# Expected FW step size
+0.21156509296270087
