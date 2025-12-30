@@ -14,4 +14,4 @@ FW
 0.0001
 
 # Gap function (relativeGap or averageExcessCost)
-averageExcessCost
+relativeGap

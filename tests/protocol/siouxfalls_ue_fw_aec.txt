@@ -5,13 +5,13 @@ tests/SiouxFalls_net.txt
 tests/SiouxFalls_trips.txt
 
 # Step size rule (FW or MSA)
-MSA
+FW
 
 # Max iterations
 1000000
 
 # Target gap
-0.0001
+0.1 #mins if averageExcessCost
 
 # Gap function (relativeGap or averageExcessCost)
-relativeGap
+averageExcessCost

@@ -4,6 +4,8 @@ Usage examples (run from repo root):
   python -m tests.run_protocol --tests protocol/siouxfalls_10_aec.txt --func averageExcessCost --runs 5 --output results.csv
   python -m tests.run_protocol --tests protocol/siouxfalls_10_aec.txt protocol/siouxfalls_eqm_aec.txt --func averageExcessCost --profile cprofile --profile-dir profs
   python -m tests.run_protocol --tests protocol/siouxfalls_ue_fw.txt --mode ue_solve --runs 3 --output ue_timing.csv
+  python -m tests.run_protocol --tests protocol/siouxfalls_10_aec.txt --func averageExcessCost --network-path network_baseline.py --output baseline_results.csv
+  python -m tests.run_protocol --tests protocol/siouxfalls_ue_fw.txt --mode ue_solve --network-path network_baseline.py --runs 3 --output baseline_ue_timing.csv
 
 Test spec file format (non-comment lines):
     Line 1: network file path
@@ -387,8 +389,8 @@ def run_ue_test(spec_path: str) -> Tuple[float, float, bool, Dict]:
     # Solve UE
     net.userEquilibrium(step_rule, max_iters, target_gap, gap_func)
     
-    # Extract results from globals set by userEquilibrium
-    rg = globals().get('relative_gaps', None)
+    # Extract results from network module's globals (where userEquilibrium sets them)
+    rg = network.__dict__.get('relative_gaps', None)
     if rg is not None and len(rg) > 0:
         actual_iters = len(rg)
         final_gap = rg[-1]
@@ -422,28 +424,41 @@ def run_ue_test(spec_path: str) -> Tuple[float, float, bool, Dict]:
     return actual_iters, expected_iters if expected_iters else actual_iters, passed, details
 
 
-def time_test(spec_path: str, runner: Callable[[], Tuple[float, float, bool, Dict]], runs: int) -> Tuple[float, float, float, Dict]:
-    """Time the test over `runs` executions. Returns (mean, std, last_value, details)."""
+def time_test(spec_path: str, runner: Callable[[], Tuple[float, float, bool, Dict]], runs: int) -> Tuple[float, float, float, float, float, float, Dict]:
+    """Time the test over `runs` executions. Returns (time_mean, time_std, value_mean, value_std, final_gap_mean, final_gap_std, details)."""
     times: List[float] = []
-    last_value = None
+    values: List[float] = []
+    final_gaps: List[float] = []
     details = None
     for _ in range(runs):
         t0 = time.perf_counter()
         value, answer, passed, details = runner()
         t1 = time.perf_counter()
         times.append(t1 - t0)
-        last_value = value
-    mean = statistics.mean(times)
-    std = statistics.pstdev(times) if len(times) > 1 else 0.0
-    return mean, std, last_value, details
+        values.append(value)
+        final_gap = details.get('final_gap', None)
+        if final_gap is not None:
+            try:
+                final_gaps.append(float(final_gap))
+            except (ValueError, TypeError):
+                pass
+    
+    time_mean = statistics.mean(times)
+    time_std = statistics.pstdev(times) if len(times) > 1 else 0.0
+    
+    value_mean = statistics.mean(values) if values else None
+    value_std = statistics.pstdev(values) if len(values) > 1 else 0.0
+    
+    final_gap_mean = statistics.mean(final_gaps) if final_gaps else None
+    final_gap_std = statistics.pstdev(final_gaps) if len(final_gaps) > 1 else 0.0
+    
+    return time_mean, time_std, value_mean, value_std, final_gap_mean, final_gap_std, details
 
 
-def collect_profile(spec_path: str, func_name: str, out_path: str) -> None:
+def collect_profile(spec_path: str, runner: Callable[[], Tuple[float, float, bool, Dict]], out_path: str) -> None:
     """Run one invocation under cProfile and write a stats file to out_path."""
     profiler = cProfile.Profile()
-    def target():
-        run_single_test(spec_path, func_name)
-    profiler.runcall(target)
+    profiler.runcall(runner)
     s = io.StringIO()
     ps = pstats.Stats(profiler, stream=s).sort_stats('cumtime')
     ps.print_stats(80)
@@ -487,15 +502,15 @@ def main():
             else:
                 raise ValueError(f"Unknown mode {args.mode}")
 
-            mean, std, last_value, details = time_test(spec, runner, args.runs)
-            value, expected, passed, details_single = runner()
-            details = details_single or details
+            time_mean, time_std, value_mean, value_std, final_gap_mean, final_gap_std, _ = time_test(spec, runner, args.runs)
+            # Run once more to capture canonical details and pass/fail from the runner
+            actual_val, expected, passed, details = runner()
 
             profile_file = None
             if args.profile == 'cprofile':
                 base = os.path.splitext(os.path.basename(spec))[0]
                 profile_file = os.path.join(args.profile_dir, f"{base}.prof.txt")
-                collect_profile(spec, args.func if args.mode=='auto' else '', profile_file)
+                collect_profile(spec, runner, profile_file)
 
             # Optional per-link flow diff output when a flow answer is provided (auto/shift modes)
             flow_diff_file = None
@@ -535,16 +550,18 @@ def main():
                 'test_spec': spec,
                 'metric': metric_name,
                 'expected': expected_val,
-                'value': actual_val,
+                'value_mean': value_mean if value_mean is not None else actual_val,
+                'value_std': value_std,
                 'numeric_pass': details.get('numeric_pass',''),
                 'passed': bool(passed),
                 'answer_flows': details.get('answerFlowsFile',''),
                 'flow_mismatches': details.get('flow_mismatches',''),
                 'flow_max_abs_err': details.get('flow_max_abs_err',''),
                 'flow_pass': details.get('flow_pass',''),
-                'final_gap': details.get('final_gap', ''),
-                'time_mean_s': mean,
-                'time_std_s': std,
+                'final_gap_mean': final_gap_mean,
+                'final_gap_std': final_gap_std,
+                'time_mean_s': time_mean,
+                'time_std_s': time_std,
                 'runs': args.runs,
                 'profile_file': profile_file,
                 'flow_diff_file': flow_diff_file,
@@ -557,7 +574,7 @@ def main():
             rows.append({'test_spec': spec, 'metric': args.func if args.mode=='auto' else args.mode, 'error': str(e)})
 
     # write CSV
-    fieldnames = ['test_spec','metric','expected','value','numeric_pass','passed','answer_flows','flow_mismatches','flow_max_abs_err','flow_pass','final_gap','time_mean_s','time_std_s','runs','profile_file','flow_diff_file','error']
+    fieldnames = ['test_spec','metric','expected','value_mean','value_std','numeric_pass','passed','answer_flows','flow_mismatches','flow_max_abs_err','flow_pass','final_gap_mean','final_gap_std','time_mean_s','time_std_s','runs','profile_file','flow_diff_file','error']
     with open(args.output, 'w', newline='') as csvfile:
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writeheader()

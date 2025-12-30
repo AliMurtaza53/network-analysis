@@ -65,41 +65,70 @@ class Network:
  
    def relativeGap(self):
       """
-      This method should calculate the relative gap (as defined in Boyles et al. 2025)
+      Calculate the relative gap based on the current link flows.
       based on the current link flows, and return this value.
       
-      To do this, we calculate both the total system travel time, and
-      the shortest path travel time.
+      To do this, you will need to calculate both the total system travel time, and
+      the shortest path travel time (you will find it useful to call some of the
+      methods implemented in earlier assignments).
       """
-      TSTT = sum(self.link[ij].flow * self.link[ij].cost for ij in self.link)
-      SPTT = sum(self.ODpair[OD].demand * self.shortestPath(self.ODpair[OD].origin)[1][self.ODpair[OD].destination] for OD in self.ODpair)
-      relative_gap = (TSTT - SPTT) / SPTT
+      TSTT = 0
+      for ij in self.link:
+         TSTT += self.link[ij].flow * self.link[ij].cost
+      
+      '''for every OD pair,
+         SPTTrs = Drs * Krs
+         SPTT = Sum of all SPTTrs          
+      '''      
+      SPTT = 0
+      for ODpair in self.ODpair:
+         D_ODpair = self.ODpair[ODpair].demand
+         destination = self.ODpair[ODpair].destination
+         K_ODpair = self.shortestPath(self.ODpair[ODpair].origin)[1][destination]
+         SPTT += D_ODpair * K_ODpair
+         
+      relative_gap = (TSTT-SPTT)/SPTT
       
       return relative_gap
 
-
+#      raise utils.NotYetAttemptedException
       
    def averageExcessCost(self):
       """
-      This method should calculate the average excess cost
+      Calculate the average excess cost (AEC) based on the current link flows.
       based on the current link flows, and return this value.
       
-      To do this, calculate both the total system travel time, and
-      the shortest path travel time.
+      To do this, you will need to calculate both the total system travel time, and
+      the shortest path travel time (you will find it useful to call some of the
+      methods implemented in earlier assignments).
       """
-      TSTT = sum(self.link[ij].flow * self.link[ij].cost for ij in self.link)
-  
-      SPTT = sum(self.ODpair[ODpair].demand * self.shortestPath(self.ODpair[ODpair].origin)[1][self.ODpair[ODpair].destination] for ODpair in self.ODpair)
-  
-      tot_demand = sum(self.ODpair[ODpair].demand for ODpair in self.ODpair)
+      TSTT = 0
+      for ij in self.link:
+         TSTT += self.link[ij].flow * self.link[ij].cost
       
-      AEC = (TSTT - SPTT) / tot_demand
-  
+      '''for every OD pair,
+         SPTTrs = Drs * Krs
+         SPTT = Sum of all SPTTrs          
+      '''      
+      SPTT = 0
+      for ODpair in self.ODpair:
+         D_ODpair = self.ODpair[ODpair].demand
+         destination = self.ODpair[ODpair].destination
+         K_ODpair = self.shortestPath(self.ODpair[ODpair].origin)[1][destination]
+         SPTT += D_ODpair * K_ODpair      
+
+      tot_demand = 0
+      for ODpair in self.ODpair:
+         tot_demand += self.ODpair[ODpair].demand
+               
+      AEC = (TSTT-SPTT)/tot_demand
+      
       return AEC
+#      raise utils.NotYetAttemptedException
       
    def shiftFlows(self, targetFlows, stepSize):
       """
-      This method should update the flow on each link, by taking a weighted
+      Update link flows using a weighted average (convex combination).
       average of the current link flows (self.link[ij].flow) and the flows
       given in the targetFlows dictionary (targetFlows[ij]).  stepSize indicates
       the weight to place on the target flows (so the weight on the current
@@ -112,8 +141,8 @@ class Network:
       This method does not need to return a value.
       """
       for ij in self.link:
-          self.link[ij].flow = self.link[ij].flow * (1 - stepSize) + stepSize * targetFlows[ij]
-          self.link[ij].updateCost()
+         self.link[ij].flow =  self.link[ij].flow * (1 - stepSize) + stepSize * targetFlows[ij]
+         self.link[ij].updateCost()
          
    def FrankWolfeStepSize(self, targetFlows, precision = FRANK_WOLFE_STEPSIZE_PRECISION):
       """
@@ -128,35 +157,36 @@ class Network:
       precision.
       """
       def lambda_fn(stepSize):
-           f_lambda = 0
-           for ij in self.link:
-               current_cost = self.link[ij].cost
-               current_flow = self.link[ij].flow
-               self.link[ij].flow = self.link[ij].flow * (1 - stepSize) + stepSize * targetFlows[ij]
-               self.link[ij].updateCost()
-               f_lambda += self.link[ij].cost * (targetFlows[ij] - current_flow)
-               # reset cost
-               self.link[ij].cost = current_cost
-               self.link[ij].flow = current_flow
-           return f_lambda
+         f_lambda = 0
+         for ij in self.link:
+            current_cost = self.link[ij].cost
+            current_flow = self.link[ij].flow
+            self.link[ij].flow =  self.link[ij].flow * (1 - stepSize) + stepSize * targetFlows[ij]
+            self.link[ij].updateCost()
+            f_lambda += self.link[ij].cost * (targetFlows[ij] - current_flow)
+            # reset cost
+            self.link[ij].cost = current_cost
+            self.link[ij].flow = current_flow            
+         return f_lambda
 
-      a, b = 0, 1
-      val_a, val_b = lambda_fn(0), lambda_fn(1)
-
+      a = 0
+      b = 1
+      val_a = lambda_fn(0)
+      val_b = lambda_fn(1)
+      
       if val_a >= 0 and val_b >= 0:
-          if val_a >= 0 > val_b:
-              return b
-          else:
-              return a
-
-      while abs(b - a) > precision:
-          c = (a + b) / 2
-          val_c = lambda_fn(c)
-          if val_c * val_a > 0:
-              a = c
-          else:
-              b = c
-      return (a + b) / 2
+         if val_a >= 0 > val_b: return b
+         else:
+            return a
+      
+      while abs(b-a) > precision:
+         c = (a+b)/2
+         val_c = lambda_fn(c)
+         if val_c * val_a > 0:
+            a = c
+         else:
+            b = c
+      return (a+b)/2
    
 
    def userEquilibrium(self, stepSizeRule = 'MSA',  
@@ -165,59 +195,62 @@ class Network:
                           gapFunction = None,
                           stepType = 'natural'):
       """
-      Solve for user equilibrium using the convex combinations algorithm.
-      
-      Arguments:
-         stepSizeRule -- Step size selection: 'FW' (Frank-Wolfe) or 'MSA' (Method of Successive Averages)
-         maxIterations -- Maximum iterations before stopping
-         targetGap     -- Convergence threshold for the gap function
-         gapFunction   -- Gap calculation function (relativeGap or averageExcessCost). Defaults to relativeGap.
-         stepType      -- MSA variant: 'natural' (1/(k+1)), 'squares' (1/(k^2+1)), or other
-      
-      Returns:
-         Dictionary with keys 'iteration_times' and 'relative_gaps' tracking convergence
+      This method uses the (link-based) convex combinations algorithm to solve
+      for user equilibrium.  Arguments are the following:
+         stepSizeRule -- a string specifying how the step size lambda is
+                         to be chosen.  Currently 'FW' and 'MSA' are the
+                         available choices, but you can implement more if you
+                         want.
+         maxIterations -- stop after this many iterations have been performed
+         targetGap     -- stop once the gap is below this level
+         gapFunction   -- pointer to the function used to calculate gap.  After
+                          finishing this assignment, you should be able to
+                          choose either relativeGap or averageExcessCost.
       """
+      global iteration_times
+      global relative_gaps
+ 
+      # Default to relativeGap if not specified
       if gapFunction is None:
-         gapFunction = self.relativeGap
-      
-      iteration_times = []  # List to store cumulative time for each iteration
+          gapFunction = self.relativeGap
+ 
+      iteration_times = []  # List to store time taken for each iteration
       relative_gaps = []   # List to store gap values for each iteration
       duration = 0
-      
+ 
       initialFlows = self.allOrNothing()
       for ij in self.link:
-          self.link[ij].flow = initialFlows[ij]
-          self.link[ij].updateCost()
+         self.link[ij].flow = initialFlows[ij]
+         self.link[ij].updateCost()
  
-      for iteration in range(1, int(maxIterations) + 1):
-          # Record times
-          start = time.time()
-          gap = gapFunction()
-          print("Iteration %d: gap %f" % (iteration, gap))
-          # Record the gap for this iteration before checking convergence
-          relative_gaps.append(gap)
-          if gap < targetGap:
-              break
-          targetFlows = self.allOrNothing()
-          if stepSizeRule == 'FW':
-              stepSize = self.FrankWolfeStepSize(targetFlows)
-          elif stepSizeRule == 'MSA':
-              if stepType == 'natural':
-                  stepSize = 1 / (iteration + 1) 
-              elif stepType == 'squares':
-                  stepSize = 1 / (iteration ** 2 + 1)
-              else:
-                  stepSize = 1 / (2 ** iteration)
-          else:
-              raise BadNetworkOperationException("Unknown step size rule " + str(stepSizeRule))
+      iteration = 0
+      while iteration < maxIterations:
+         iteration += 1
+         # record times
+         start = time.time()
+         gap = gapFunction()
+         relative_gaps.append(gap)  # Record gap BEFORE convergence check
+         print("Iteration %d: gap %f" % (iteration, gap))
+         if gap < targetGap:
+            break
+         targetFlows = self.allOrNothing()
+         if stepSizeRule == 'FW':
+            stepSize = self.FrankWolfeStepSize(targetFlows)
+         elif stepSizeRule == 'MSA':
+            if stepType == 'natural':
+               stepSize = 1 / (iteration + 1) # change me for q1
+            elif stepType == 'squares':
+               stepSize = 1 / (iteration ** 2 + 1)
+            else:
+               stepSize = 1 / (2 ** iteration)
+         else:
+            raise BadNetworkOperationException("Unknown step size rule " + str(stepSizeRule))
  
-          self.shiftFlows(targetFlows, stepSize)
+         self.shiftFlows(targetFlows, stepSize)
  
-          stop = time.time()
-          duration += stop - start  # cumulative duration
-          iteration_times.append(duration)  # Record cumulative time taken
-          
-      return {'iteration_times': iteration_times, 'relative_gaps': relative_gaps}
+         stop = time.time()
+         duration += stop - start          # cumulative duration
+         iteration_times.append(duration)  # Record time taken for the current iteration 
          
    def beckmannFunction(self):
       """
@@ -233,8 +266,9 @@ class Network:
    def acyclicShortestPath(self, origin):
       """
       This method finds the shortest path in an acyclic network, from the stated
-      origin.  Assume that a topological order has already been found,
-      and referred to in the 'order' attributes of network Nodes.  Find a list of nodes in topological order in self.topologicalList.  (See the
+      origin.  You can assume that a topological order has already been found,
+      and referred to in the 'order' attributes of network Nodes.  You can also
+      find a list of nodes in topological order in self.topologicalList.  (See the
       method createTopologicalList below.)
       
       Use the 'cost' attribute of the Links to calculate travel times.  These values
@@ -244,7 +278,10 @@ class Network:
       convention in network modeling that the topological order starts at 1, whereas
       Python starts numbering at 0.  
       
-      The implementation in the text uses a vector of backnode labels.
+      The implementation in the text uses a vector of backnode labels.  In this
+      assignment, you should use back-LINK labels instead.  The idea is exactly
+      the same, except you are storing the ID of the last *link* in a shortest
+      path to each node.
       
       The backlink and cost labels are both stored in dict's, whose keys are
       node IDs.
@@ -277,20 +314,42 @@ class Network:
       
       return (backlink, cost)
       
-   def shortestPath_label(self, origin):
-      """Original label-setting shortest path implementation (kept for comparison).
-
-      Returns (backlink, cost) where backlink stores the last link id on the
-      shortest path to each node and cost stores the least-cost to each node.
+   def shortestPath(self, origin):
       """
-      backlink = {node_id: utils.NO_PATH_EXISTS for node_id in self.node}
-      cost = {node_id: utils.INFINITY for node_id in self.node}
+      This method finds the shortest path in a network which may or may not have
+      cycles; thus you cannot assume that a topological order exists.
+      
+      The implementation in the text uses a vector of backnode labels.  In this
+      assignment, you should use back-LINK labels instead.  The idea is exactly
+      the same, except you are storing the ID of the last *link* in a shortest
+      path to each node.
+
+      Use the 'cost' attribute of the Links to calculate travel times.  These values
+      are given -- do not try to recalculate them based on flows, BPR functions, etc.
+            
+      The backlink and cost labels are both stored in dict's, whose keys are
+      node IDs.
+
+      *** BE SURE YOUR IMPLEMENTATION RESPECTS THE FIRST THROUGH NODE!
+      *** Travelers should not be able to use "centroid connectors" as shortcuts,
+      *** and the shortest path tree should reflect this.
+      
+      You should use the macro utils.NO_PATH_EXISTS to initialize backlink labels,
+      and utils.INFINITY to initialize cost labels.
+      """
+      backlink = dict()
+      cost = dict()
+      
+      for i in self.node:
+         backlink[i] = utils.NO_PATH_EXISTS
+         cost[i] = utils.INFINITY
       cost[origin] = 0
-
-      scanList = {self.link[ij].head for ij in self.node[origin].forwardStar}
-
-      while scanList:
-         i = scanList.pop()
+      
+      scanList = [self.link[ij].head for ij in self.node[origin].forwardStar]
+         
+      while len(scanList) > 0:
+         i = scanList[0]
+         scanList.remove(i)
          labelChanged = False
          for hi in self.node[i].reverseStar:
             h = self.link[hi].tail
@@ -301,48 +360,13 @@ class Network:
                cost[i] = tempCost
                backlink[i] = hi
                labelChanged = True
-         if labelChanged:
-            scanList.update(self.link[ij].head for ij in self.node[i].forwardStar if self.link[ij].head not in scanList)
-
-      return backlink, cost
-
-   def shortestPath_heap(self, origin):
-      """Heap-based Dijkstra shortest path (label-setting with priority queue).
-
-      This is typically much faster on sparse networks, and respects
-      `firstThroughNode` by preventing expansion from centroid connector nodes
-      (nodes with id < firstThroughNode) except for the origin.
-      Returns (backlink, cost) like the original implementation.
-      """
-      backlink = {node_id: utils.NO_PATH_EXISTS for node_id in self.node}
-      cost = {node_id: utils.INFINITY for node_id in self.node}
-      cost[origin] = 0
-
-      heap = [(0, origin)]
-
-      while heap:
-         cur_cost, u = heapq.heappop(heap)
-         if cur_cost > cost[u]:
-            continue
-         # If this node is a centroid connector (forbidden to be an intermediate)
-         # and not the origin, do not expand its outgoing links.
-         if u < self.firstThroughNode and u != origin:
-            continue
-         for ij in self.node[u].forwardStar:
-            v = self.link[ij].head
-            tempCost = cost[u] + self.link[ij].cost
-            if tempCost < cost[v]:
-               cost[v] = tempCost
-               backlink[v] = ij
-               heapq.heappush(heap, (tempCost, v))
-
-      return backlink, cost
-
-   def shortestPath(self, origin):
-      """Default shortest path API (uses heap-based Dijkstra for performance)."""
-      return self.shortestPath_heap(origin)
+         if labelChanged == True:
+            scanList.extend([self.link[ij].head for ij in self.node[i].forwardStar
+                  if self.link[ij].head not in scanList])
       
-   def allOrNothing(self, use_heap=True):
+      return (backlink, cost)
+      
+   def allOrNothing(self):
       """
       This method generates an all-or-nothing assignment using the current link
       cost values.  It must do the following:
@@ -352,23 +376,25 @@ class Network:
       The resulting link flows should be returned in the allOrNothing dict, whose
       keys are the link IDs.
 
-      Network files are in the TNTP format, where nodes are numbered
+      Be aware that the network files are in the TNTP format, where nodes are numbered
       starting at 1, whereas Python starts numbering at 0.  
             
-      One could optimize for even more efficient all-or-nothing loading.
+      Your code will not be scored based on efficiency, but you should think about
+      different ways of finding an all-or-nothing loading, and how this might
+      best be done.
       """
-      allOrNothing = {ij: 0 for ij in self.link}
+      allOrNothing = dict()
+      for ij in self.link:
+         allOrNothing[ij] = 0
+         
       for origin in range(1, self.numZones + 1):
-         if use_heap:
-            backlink, _ = self.shortestPath_heap(origin)
-         else:
-            backlink, _ = self.shortestPath_label(origin)
+         (backlink, cost) = self.shortestPath(origin)
          for OD in [OD for OD in self.ODpair if self.ODpair[OD].origin == origin]:
             curnode = self.ODpair[OD].destination
             while curnode != self.ODpair[OD].origin:
                allOrNothing[backlink[curnode]] += self.ODpair[OD].demand
                curnode = self.link[backlink[curnode]].tail
-
+      
       return allOrNothing
                   
    def findLeastEnteringLinks(self):
@@ -386,7 +412,7 @@ class Network:
    
    def formAdjacencyMatrix(self):
       """
-      This method produces an adjacency matrix, with rows and columns
+      This method should produce an adjacency matrix, with rows and columns
       corresponding to each node, and entries of 1 if there is a link connecting
       the row node to the column node, and 0 otherwise.  This matrix should
       be stored in self.adjacencyMatrix, which is a dictionary of dictionaries:
@@ -414,7 +440,7 @@ class Network:
       
       If the network has cycles, a topological order does not exist.  The presence
       of cycles can be detected in the algorithm for finding a topological order,
-      and raises an exception if this is detected.
+      and you should raise an exception if this is detected.
       """
       # This implementation temporarily messes with reverse stars, must fix at end
       numOrderedNodes = 0
@@ -562,7 +588,7 @@ class Network:
                   self.node[int(data[1])] = Node(True if int(data[1]) <= self.numZones else False)
          
       except IOError:
-         print("\nError reading network file %s" % networkFileName)
+         print("\nError reading network file %s" % networkFile)
          traceback.print_exc(file=sys.stdout) 
 
    def readDemandFile(self, demandFileName):
@@ -623,7 +649,7 @@ class Network:
                   self.totalDemand += demand      
                                     
       except IOError:
-         print("\nError reading demand file %s" % demandFileName)
+         print("\nError reading network file %s" % networkFile)
          traceback.print_exc(file=sys.stdout)       
             
    def validate(self):
@@ -702,60 +728,5 @@ class Network:
       for OD in self.ODpair:
          self.ODpair[OD].leastCost = 0
          
-import cProfile
-import pstats
 
-def run_demo():
-   """Solve UE on sample test networks, write flows and runtime summaries.
-
-   Uses TNTP-format files under tests/:
-   - tests/SiouxFalls_net.txt, tests/SiouxFalls_trips.txt
-   - tests/Anaheim_net.txt, tests/Anaheim_trips.txt
-   Writes per-network flows to outputs/<name>_ue_flows.txt and cProfile to outputs/<name>_perf.prof.
-   """
-   import os
-   os.makedirs("outputs", exist_ok=True)
-
-   samples = [
-      ("SiouxFalls", "tests/SiouxFalls_net.txt", "tests/SiouxFalls_trips.txt")
-      #,
-      #("Anaheim", "tests/Anaheim_net.txt", "tests/Anaheim_trips.txt"),
-   ]
-
-   max_itrn = 1e6
-   target_rgap = 1e-4
-   step_rule = "FW"
-
-   for name, net_path, trips_path in samples:
-      net = Network(net_path, trips_path)
-
-      t0 = time.perf_counter()
-      with cProfile.Profile() as profile:
-         convergence_data = net.userEquilibrium(
-            stepSizeRule=step_rule,
-            maxIterations=int(max_itrn),
-            targetGap=target_rgap,
-            gapFunction=net.relativeGap
-         )
-      t1 = time.perf_counter()
-
-      # Dump profile per network
-      stats = pstats.Stats(profile)
-      stats.sort_stats(pstats.SortKey.TIME)
-      stats.dump_stats(os.path.join("outputs", f"{name}_perf.prof"))
-
-      # Write flows file matching tests formatting
-      flows_path = os.path.join("outputs", f"{name}_ue_flows.txt")
-      with open(flows_path, "w") as f:
-         for ij in sorted(net.link, key=lambda ij: net.link[ij].sortKey):
-            f.write(f"{ij} {net.link[ij].flow:.6f}\n")
-
-      final_gap = convergence_data['relative_gaps'][-1] if convergence_data['relative_gaps'] else net.relativeGap()
-      total_time = t1 - t0
-      num_iters = len(convergence_data['relative_gaps'])
-      print(f"{name}: iterations={num_iters}, final_gap={final_gap:.6g}, total_time_s={total_time:.3f}, flows={flows_path}")
-
-if __name__ == "__main__":
-   run_demo()
-
-
+ 
