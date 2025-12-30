@@ -1,6 +1,28 @@
 # Network Analysis
 
-A Python-based transportation network analysis framework for solving user equilibrium (UE) problems using Frank-Wolfe or Method of Successive Averages (MSA) algorithms. Includes comprehensive testing, validation, and performance benchmarking tools.
+A Python-based transportation network analysis framework for solving user equilibrium (UE) problems using Frank-Wolfe or Method of Successive Averages (MSA) algorithms. Includes comprehensive testing, validation, and performance benchmarking tools. 
+
+# Acknowledgement
+
+This project builds on skeleton code provided as part of homework assignments in **Dr. Stephen Boyles' CE 393** (Fall 2023, UT Austin). 
+
+**Class-provided skeleton:**
+- `od.py` - Origin-Destination pair representation
+- `node.py` - Network node class
+- `link.py` - Link class with BPR cost functions
+- `path.py` - Path-based representation
+- `utils.py` - File I/O and TNTP format utilities
+
+**Course assignment:**
+We were tasked with implementing `network.py` to solve user equilibrium problems using Frank-Wolfe and MSA algorithms.
+
+**Additional work (beyond course requirements):**
+- `validate.py` - Fast validation tool for development
+- Comprehensive testing suite (`tests/run_protocol.py`, etc.)
+- Performance benchmarking and comparison tools
+- Documentation (README, VALIDATE.md, etc.)
+- Code refinements, memory optimization, and cleanup
+- Archive organization and versioning
 
 ## Overview
 
