@@ -4,7 +4,7 @@ A Python-based transportation network analysis framework for solving user equili
 
 # Acknowledgement
 
-This project builds on skeleton code provided as part of homework assignments in **Dr. Stephen Boyles' CE 393** (Fall 2023, UT Austin). 
+This project builds on skeleton code provided as part of homework assignments in **Dr. Stephen Boyles' CE 392C** (Fall 2023, UT Austin). 
 
 **Class-provided skeleton:**
 - `od.py` - Origin-Destination pair representation
