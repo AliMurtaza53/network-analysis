@@ -95,32 +95,55 @@ def reset_flows(net: Network) -> None:
 
 
 def get_metrics(net: Network) -> Dict:
-    """Calculate key performance metrics.
-    
-    Args:
-        net: Network object (solved)
-    
-    Returns:
-        Dict with keys: tstt, avg_cost, max_utilization, congested_links, total_demand
-    """
+    """Calculate key performance metrics."""
     tstt = sum(link.flow * link.cost for link in net.link.values())
-    total_flow = sum(link.flow for link in net.link.values())
-    avg_cost = tstt / total_flow if total_flow > 0 else 0
-    
-    utilizations = [link.flow / link.capacity for link in net.link.values() if link.capacity > 0]
-    max_util = max(utilizations) if utilizations else 0
-    
-    congested = sum(1 for u in utilizations if u > 1.0)
-    
-    total_demand = sum(sum(od.demand for od in origin_dict.values()) 
-                       for origin_dict in net.ODpair.values())
+    total_demand = sum(od.demand for origin_dict in net.ODpair.values() 
+                      for od in origin_dict.values())
     
     return {
         'tstt': tstt,
-        'avg_cost': avg_cost,
-        'max_utilization': max_util,
-        'congested_links': congested,
         'total_demand': total_demand,
         'relative_gap': net.relativeGap(),
         'avg_excess_cost': net.averageExcessCost()
     }
+
+
+def scale_capacity(net: Network, link_ids: List[Tuple], 
+                   capacity_factor: float = 2.0, 
+                   fft_factor: float = None) -> None:
+    """Scale capacity and free flow time on selected links.
+    
+    Can model capacity expansion (factor > 1.0) or reduction (factor < 1.0).
+    By default, free flow time adjusts inversely to capacity:
+    - Double capacity (2.0x) → halve FFT (0.5x)
+    - Halve capacity (0.5x) → double FFT (2.0x)
+    
+    Args:
+        net: Network object
+        link_ids: List of (i, j) tuples for links to modify
+        capacity_factor: Capacity multiplication factor (default: 2.0 = doubling)
+        fft_factor: Free flow time multiplication factor 
+                   (default: None = auto-compute as 1/capacity_factor)
+    
+    Example:
+        >>> # Expand highway: double capacity, auto-adjust FFT to 0.5x
+        >>> scale_capacity(net, [("5","9"), ("9","10")])
+        
+        >>> # Custom: 50% capacity increase, manual FFT adjustment
+        >>> scale_capacity(net, links, capacity_factor=1.5, fft_factor=0.8)
+        
+        >>> # Bottleneck study: reduce capacity, FFT increases automatically
+        >>> scale_capacity(net, links, capacity_factor=0.5)  # FFT becomes 2.0x
+    """
+    # Auto-compute FFT factor if not provided: inverse of capacity factor
+    if fft_factor is None:
+        fft_factor = 1.0 / capacity_factor
+    
+    for link_id in link_ids:
+        if link_id in net.link:
+            net.link[link_id].capacity *= capacity_factor
+            net.link[link_id].freeFlowTime *= fft_factor
+            net.link[link_id].updateCost()
+        else:
+            # Silently skip missing links (they may not exist in all networks)
+            pass

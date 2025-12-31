@@ -81,6 +81,33 @@ for link_id, link in net.link.items():
     print(f"Link {link_id}: flow={link.flow:.2f}, cost={link.cost:.2f}")
 ```
 
+### Policy Analysis
+
+Analyze transportation policies by modifying network capacity, demand, or costs:
+
+```python
+from policies.modifiers import scale_capacity, scale_demand, remove_links, reset_flows
+
+# Capacity expansion: double capacity on highway corridor
+highway_links = ['(5,9)', '(9,10)', '(10,15)', '(15,22)']
+scale_capacity(net, highway_links, capacity_factor=2.0)  # FFT auto-adjusts to 0.5x
+net.userEquilibrium(stepSizeRule='FW', targetGap=1e-4, maxIterations=3000)
+
+# Demand growth scenario: 20% increase across all OD pairs
+scale_demand(net, factor=1.2)
+
+# Network resilience: remove links (e.g., for disaster analysis)
+remove_links(net, ['(5,9)', '(9,10)'])
+
+# Compare metrics before/after
+reset_flows(net)  # Clear flows before re-solving with policy
+from policies.modifiers import get_metrics
+metrics = get_metrics(net)
+print(f"TSTT: {metrics['tstt']:.0f}, Gap: {metrics['relative_gap']:.6e}")
+```
+
+See [ANALYSIS_WORKFLOWS.md](ANALYSIS_WORKFLOWS.md) for link removal, OD modification, and system equilibrium analysis patterns.
+
 ## Core Files
 
 ### Network Implementation
@@ -155,9 +182,16 @@ network-analysis/
 ├── network.py              # Main implementation (USE THIS)
 ├── validate.py             # Quick validation tool
 ├── VALIDATE.md             # validate.py documentation
-├── TODO.md                 # Development roadmap
+├── README.md               # This file
+├── ANALYSIS_WORKFLOWS.md   # Policy analysis and advanced workflows
 ├── link.py, node.py, od.py, path.py, utils.py
 ├── tests.py, grader.py     # Unit tests
+│
+├── policies/               # Policy modification functions
+│   └── modifiers.py        # Scale capacity/demand, remove links, etc.
+│
+├── experiments/            # Policy analysis experiments
+│   └── highway_expansion_siouxfalls.py  # Example: capacity expansion
 │
 ├── tests/                  # Test data and advanced testing tools
 │   ├── *_net.txt           # Network topology files (TNTP format)
