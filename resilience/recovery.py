@@ -167,7 +167,8 @@ def run_recovery_curve(config: dict, disruption_scenario: Scenario,
     # Resilience index: trapezoidal integral / horizon
     days_arr = np.array(snapshot_days, dtype=float)
     q_arr = np.array(q_values, dtype=float)
-    R = float(np.trapz(q_arr, days_arr) / horizon) if horizon > 0 else 0.0
+    _trapz = getattr(np, 'trapezoid', np.trapz)
+    R = float(_trapz(q_arr, days_arr) / horizon) if horizon > 0 else 0.0
     resilience_loss = 1.0 - R
 
     # Time to 95% recovery
