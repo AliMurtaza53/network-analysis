@@ -28,7 +28,7 @@ DEFAULT_REF_PARAMS = {
     'vot_truck_factor': 1.0,
     'recovery_duration': 60.0,
     'recovery_shape': 'linear',
-    'gap_tolerance': 1e-4,
+    'gap_tolerance': 1e-3,
 }
 
 ANAHEIM_CENTER = (-117.9, 33.84)
