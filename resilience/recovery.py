@@ -152,7 +152,7 @@ def run_recovery_curve(config: dict, disruption_scenario: Scenario,
                     'vc': lk.flow / lk.capacity if lk.capacity > 0 else 0}
               for lid, lk in snap_net.link.items()}
 
-        unmet = sum(saved.values())
+        unmet = sum(od.demand for od in removed.values())
         snap_result = {
             'link_results': lr,
             'unmet_demand': unmet,
