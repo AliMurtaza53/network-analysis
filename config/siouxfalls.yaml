@@ -1,0 +1,18 @@
+network: tests/SiouxFalls_net.txt
+trips: tests/SiouxFalls_trips.txt
+geojson_links: null
+geojson_nodes: null
+crs_metric: EPSG:26914
+
+solver_gap: 1.0e-4
+solver_max_iter: 1000000
+solver_step_rule: FW
+
+vot_passenger: 18.0
+vot_truck: 60.0
+pce: 2.0
+truck_share: 0.08
+unmet_penalty_hours: 2.0
+
+accessibility_beta: 0.1
+criticality_top_n: 20

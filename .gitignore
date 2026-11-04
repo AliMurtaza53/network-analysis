@@ -1,53 +1,8 @@
-# Python
 __pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
+*.pyc
+*.pyo
+.pytest_cache/
 *.egg-info/
 dist/
 build/
-.pytest_cache/
-.coverage
-htmlcov/
-
-# Virtual Environment
-venv/
-ENV/
-env/
-.venv
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Test outputs
-baseline.csv
-candidate.csv
-comparison.csv
-*.prof.txt
-flow_diffs/
-profiler_output/
-profs/
-fw_results.csv
-shift_results.csv
-test_protocol_results.csv
-ue_solve_test.csv
-ue_timing.csv
-flow_compare.csv
-tmp_net_override.csv
-
-# Project outputs (keep in repo, but can be regenerated)
-outputs/*.prof
-outputs/*.csv
-
-# Temporary files
-*.tmp
-*.temp
+*.csv

@@ -1,0 +1,23 @@
+network: tests/Anaheim_net.txt
+trips: tests/Anaheim_trips.txt
+geojson_links: data/anaheim.geojson
+geojson_nodes: data/anaheim_nodes.geojson
+crs_metric: EPSG:26911
+
+# Solver
+solver_gap: 1.0e-4
+solver_max_iter: 1000000
+solver_step_rule: FW
+
+# Economic parameters (PLACEHOLDER — confirm with Haider)
+vot_passenger: 18.0    # USD per hour
+vot_truck: 60.0        # USD per hour
+pce: 2.0               # passenger car equivalents per truck
+truck_share: 0.08      # fraction of passenger demand that is truck
+unmet_penalty_hours: 2.0  # penalty per unmet trip in hours of VOT
+
+# Accessibility decay (calibrated on baseline)
+accessibility_beta: 0.1   # 1/min; calibrated once and fixed
+
+# Criticality screening
+criticality_top_n: 60
