@@ -5,7 +5,7 @@ import matplotlib.cm as cm
 import pandas as pd
 from resilience.plotting.style import add_panel_labels, add_footnote, save_figure
 
-PLACEHOLDER_NOTE = "PLACEHOLDER: synthetic/model outputs — confirm parameters with Haider before publication"
+PLACEHOLDER_NOTE = "Network/demand: TNTP Anaheim benchmark. Economic params (VOT, truck share, PCE) are assumed — cost figures only."
 PARAM_LABELS = {
     'demand_factor': 'Demand multiplier',
     'severity': 'Disruption severity',
