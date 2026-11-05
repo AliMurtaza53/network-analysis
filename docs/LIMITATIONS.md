@@ -14,7 +14,9 @@
 
 ## Scenario limitations
 
-**Synthetic hazard footprints.** Spatial footprint scenarios (S3) use a linear intensity decay from a point center. No real hazard data (flood inundation, earthquake ground motion, wind speed) is used. Footprint shape, size and severity are parameterised, not physically derived.
+**Spatial footprint hazard model (S3).** S3 implements the Pregnolato et al. (2017, TRD) depth-disruption function v(w) = 0.0009w² − 0.5529w + 86.9448 (km/h, w in mm), which reduces free-flow speed as a quadratic function of flood depth. Flood depth decays linearly from a maximum at the flood centre (severity × 300 mm) to zero at radius_km. No real flood inundation map is used; centre, radius and severity are parameterised assumptions, not physically derived from a hydrological model.
+
+**BPR parameters.** The TNTP Anaheim benchmark network specifies α = 0.15, β = 4 uniformly on all links (original BPR 1964 values). California regional travel demand models (e.g. SCAG) use higher exponents (α = 0.80–1.00, β = 5–8) differentiated by facility type and area type. These produce steeper cost curves at high V/C ratios and would yield significantly larger TSTT impacts under disruption. We retain TNTP parameters for benchmark reproducibility (validated R² = 0.9998 against published flows); results are not directly comparable to SCAG-calibrated models.
 
 **Instant disruption.** All scenario families apply disruption instantaneously to the full network state. Staged or progressive failure (e.g., a flood that incrementally inundates roads) is not modelled.
 

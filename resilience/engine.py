@@ -92,45 +92,66 @@ def check_od_connectivity(net) -> Tuple[List[str], List[str]]:
 # Spatial footprint application (S3)
 # ------------------------------------------------------------------
 
+def _pregnolato_speed_ratio(depth_mm: float) -> float:
+    """Speed ratio from Pregnolato et al. (2017, TRD) depth-disruption function.
+
+    v(w) = 0.0009*w^2 - 0.5529*w + 86.9448 (km/h), w = flood depth in mm, R^2=0.95.
+    Parabola has minimum ~307 mm; paper states 300 mm as closure threshold, so cap there.
+    Returns fraction of unflooded speed [0, 1].
+    """
+    if depth_mm >= 300.0:
+        return 0.0
+    v = 0.0009 * depth_mm**2 - 0.5529 * depth_mm + 86.9448
+    return max(0.0, v) / 86.9448  # 86.9448 = v(0), unflooded speed
+
+
 def _apply_spatial_footprint(net, params: dict, link_gdf: Optional[gpd.GeoDataFrame],
                               speed_reduction: bool = False):
-    """Apply intensity-driven capacity reduction based on distance from footprint center."""
+    """Apply Pregnolato (2017) depth-disruption: flood depth → speed ratio → FFT increase.
+
+    severity parameter maps to max flood depth: severity=1.0 → 300 mm (complete closure).
+    Depth decays linearly from center to zero at radius_km.
+    """
     if link_gdf is None or link_gdf.empty:
         return
 
     from shapely.geometry import Point
     import pyproj
-    from shapely.ops import transform
-    import functools
 
     cx = params['center_lon']
     cy = params['center_lat']
     radius_km = params['radius_km']
     severity_max = params.get('severity', 1.0)
+    w_max_mm = severity_max * 300.0  # severity=1.0 → 300 mm → impassable at center
 
-    # Reproject center to UTM for distance in meters
     crs_metric = 'EPSG:26911'
-    proj_wgs = pyproj.CRS('EPSG:4326')
-    proj_utm = pyproj.CRS(crs_metric)
-    transformer = pyproj.Transformer.from_crs(proj_wgs, proj_utm, always_xy=True)
+    transformer = pyproj.Transformer.from_crs('EPSG:4326', crs_metric, always_xy=True)
     cx_m, cy_m = transformer.transform(cx, cy)
-
     gdf_m = link_gdf.to_crs(crs_metric) if link_gdf.crs else link_gdf
 
     for idx, row in gdf_m.iterrows():
         geom = row.geometry
         if geom is None:
             continue
-        centroid = geom.centroid
-        dist_m = centroid.distance(Point(cx_m, cy_m))
-        dist_km = dist_m / 1000.0
+        dist_km = geom.centroid.distance(Point(cx_m, cy_m)) / 1000.0
         if dist_km >= radius_km:
             continue
-        # Pregnolato-style linear intensity decay
-        intensity = 1.0 - (dist_km / radius_km)
-        effective_severity = intensity * severity_max
+
+        depth_mm = w_max_mm * (1.0 - dist_km / radius_km)
+        speed_ratio = _pregnolato_speed_ratio(depth_mm)
         link_id = row['link_id']
-        _reduce_capacity(net, link_id, effective_severity, speed_reduction)
+        if link_id not in net.link:
+            continue
+        lk = net.link[link_id]
+        if speed_ratio < 0.01:
+            # Road impassable at this depth
+            lk.capacity = CAPACITY_FLOOR
+            lk.freeFlowTime *= 100.0
+        else:
+            # Speed reduced → free-flow time increases; capacity scales proportionally
+            lk.capacity = max(lk.capacity * speed_ratio, CAPACITY_FLOOR)
+            lk.freeFlowTime /= speed_ratio
+        lk.updateCost()
 
 
 # ------------------------------------------------------------------
