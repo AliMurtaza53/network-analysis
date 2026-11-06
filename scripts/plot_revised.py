@@ -110,9 +110,9 @@ def f3():
             ('S5 demand surge,\n×1.2 and ×1.4', 'S5', d.family == 'S5', 'o')]
     mets = [('tstt_ratio', '(A) Total travel time', 'Ratio to baseline (log scale)', True),
             ('tt_served_ratio', '(B) Time per served trip', 'Ratio to baseline (log scale)', True),
-            ('accessibility_loss', '(C) Accessibility loss', 'Percent of baseline', False)]
+            ('accessibility_loss', '(C) Accessibility', 'Loss (% of baseline)', False)]
     note = ('Anaheim network (914 links, 38 zones). Every ratio is paired with a baseline solved the same way (solver noise about 0.05%). '
-            'Error bars: S2 to S5, range across BPR parameters (alpha 0.15 to 0.50, beta 3 to 5); S1, 95% bootstrap interval of the median. '
+            'Lines through points: S2 to S5, range across BPR parameters (alpha 0.15 to 0.50, beta 3 to 5), with an arrow where the range runs off the axis; S1, 95% bootstrap interval of the median. '
             'Total travel time falls when demand goes unserved and rises when demand grows, so panel B is the like-for-like measure. '
             'The S1 run closing a single link (ratio 1.00) is omitted.')
     fig, gs, axl = make([3.75], 3, [1.25, 1.0, 0.72], note, legend_rows=1, extra=0.75)
@@ -123,9 +123,9 @@ def f3():
         if lg:
             ax.set_xscale('log'); ax.axvline(1, color=BASE, lw=0.9, zorder=1)
             ax.set_xticks([1, 3, 10, 30]); ax.xaxis.set_major_formatter(matplotlib.ticker.ScalarFormatter())
-            ax.set_xlim(0.8, 120 if m == 'tstt_ratio' else 120)
+            ax.set_xlim(0.8, 45)
         else:
-            ax.axvline(0, color=BASE, lw=0.9, zorder=1); ax.set_xlim(-3, 100); ax.set_xticks([0, 25, 50, 75, 100])
+            ax.axvline(0, color=BASE, lw=0.9, zorder=1); ax.set_xlim(-3, 100); ax.set_xticks([0, 50, 100])
         for ri, (lab, fam, mask, mk) in enumerate(rows):
             y0 = n - 1 - ri; s = d[mask]; sc = 100 if m == 'accessibility_loss' else 1
             x = s[m].values * sc; col = PAL[fam]
@@ -140,13 +140,15 @@ def f3():
                 ax.errorbar(med, y0, xerr=[[med - lo], [hi - med]], fmt='D', ms=4, color='black', elinewidth=1.3, capsize=3, zorder=5)
             else:
                 ax.scatter(x, [y0] * len(x), s=26, marker=mk, color=col, edgecolor=SURFACE, linewidth=0.5, zorder=4)
+                top = ax.get_xlim()[1]
                 for xi, lb in zip(x, s.label):
                     lo, hi = rng[(lb, m)]
-                    ax.errorbar(xi, y0, xerr=[[max(xi - lo * sc, 0)], [max(hi * sc - xi, 0)]], fmt='none', ecolor=col, elinewidth=1,
-                                capsize=2.5, zorder=3, alpha=0.9)
+                    ax.plot([max(lo * sc, ax.get_xlim()[0]), min(hi * sc, top)], [y0, y0], color=col, lw=1.3, alpha=0.55, zorder=3, solid_capstyle='butt')
+                    if hi * sc > top:
+                        ax.plot(top, y0, marker='>', ms=5, color=col, clip_on=False, zorder=4)
             if ci < 2 and fam != 'S1':
                 hi = max(rng[(lb, m)][1] for lb in s.label)
-                ax.text(hi * 1.12, y0 + 0.3, f'{hi:.1f}×', fontsize=VAL, va='bottom', ha='left')
+                ax.text(ax.get_xlim()[1], y0 + 0.32, f'upper bound {hi:.1f}×' if hi < 100 else f'upper bound {hi:.0f}×', fontsize=VAL, va='bottom', ha='right')
         ax.set_xlabel(xl); ax.set_title(ttl, pad=4); ax.set_ylim(-0.6, n - 0.4)
         ax.set_yticks(range(n)); ax.tick_params(axis='y', length=0)
         ax.set_yticklabels([r[0] for r in reversed(rows)] if ci == 0 else [])
