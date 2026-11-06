@@ -289,6 +289,32 @@ def stage_numerical():
     print(pd.DataFrame(res)[['label', 'theta', 'rule', 'tstt', 'tstt_ratio', 'iters', 'secs']].to_string())
 
 
+# ------------------------------------------------------------ BPR uncertainty
+def stage_uncert():
+    g = json.load(open(f'{OUT}/s2_greedy.json'))['chosen']
+    art = json.load(open(f'{OUT}/arterial_ids.json'))
+    cases = []
+    for a, b in ((0.15, 3.0), (0.15, 5.0), (0.50, 3.0), (0.50, 5.0)):
+        th = dict(bpr_alpha=a, bpr_power=b)
+        cases.append(dict(theta=th, spec=('S0',), family='S0', label='Baseline'))
+        for k in (1, 3, 5):
+            cases.append(dict(theta=th, spec=('REM', g[:k]), family='S2', label=f'S2 greedy top-{k}'))
+        for r in (1.0, 2.0, 3.0):
+            cases.append(dict(theta=th, spec=('S3', r, 1.0), family='S3', label=f'S3 flood r={r:g} km'))
+        for c in (0.75, 0.5, 0.25):
+            cases.append(dict(theta=th, spec=('S4a', c), family='S4', label=f'S4a network-wide cap {c}'))
+            cases.append(dict(theta=th, spec=('CAP', art, c), family='S4', label=f'S4b arterial cap {c}'))
+        for df in (1.2, 1.4):
+            for lab, sp in ((f'S5 demand x{df}', ('S0',)), (f'S5 demand x{df} + flood r=2 km', ('S3', 2.0, 1.0)),
+                            (f'S5 demand x{df} + S2 top-3', ('REM', g[:3]))):
+                cases.append(dict(theta={**th, 'demand_factor': df}, spec=sp, family='S5', label=lab))
+    cases.sort(key=lambda c: -(c['spec'][0] in ('S4a', 'CAP')))
+    with _pool() as pool:
+        res = pool.map(run_case, cases, chunksize=1)
+    pd.DataFrame(res).to_parquet(f'{OUT}/uncert.parquet', index=False)
+    print(pd.DataFrame(res)[['label', 'theta', 'tstt', 'iters', 'secs']].head(8).to_string())
+
+
 def stage_smoke():
     _init()
     for spec in (('S0',), ('S3', 3.0, 1.0), ('REM', ['(92,91)'])):
