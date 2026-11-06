@@ -4,7 +4,7 @@ working recovery restoration, and rebuilt sensitivity analysis.
 Usage: python scripts/run_revision.py [q2] [recovery] [q3] [numerical] [smoke]
 Outputs go to outputs/revised/ (old outputs are left untouched).
 """
-import sys, os, io, copy, json, time
+import sys, os, io, copy, json, time, random
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import numpy as np
 import pandas as pd
@@ -88,6 +88,10 @@ def disrupt(net, spec):
         return
     if k == 'S1':
         apply_scenario(net, Scenario('S1', 'S1', {'k': spec[1], 'seed': spec[2]}), None, None, None, demand_factor=None)
+    elif k == 'S1x':
+        roads = [l for l in net.link if min(int(x) for x in l.strip('()').split(',')) > 38]
+        for lid in random.Random(spec[2]).sample(roads, spec[1]):
+            _remove_link(net, lid)
     elif k == 'REM':
         for lid in spec[1]:
             _remove_link(net, lid)
@@ -313,6 +317,47 @@ def stage_uncert():
         res = pool.map(run_case, cases, chunksize=1)
     pd.DataFrame(res).to_parquet(f'{OUT}/uncert.parquet', index=False)
     print(pd.DataFrame(res)[['label', 'theta', 'tstt', 'iters', 'secs']].head(8).to_string())
+
+
+# --------------------------------------------- robustness: no connectors, MSA
+def _roads(ids):
+    return [l for l in ids if min(int(x) for x in l.strip('()').split(',')) > 38]
+
+
+def stage_noconn():
+    old = pd.read_parquet(f'{OUT}/q2_metrics.parquet')
+    bl = pd.read_parquet('outputs/q2/baseline_links.parquet')
+    roads = _roads(bl.link_id)
+    art = _roads(bl.sort_values('flow', ascending=False).link_id)[:int(0.10 * len(roads))]
+    cases = [dict(spec=('S0',), family='S0', label='Baseline')]
+    for sp in old[old.family == 'S1'].spec:
+        _, k, seed = json.loads(sp)
+        cases.append(dict(spec=('S1x', k, seed), family='S1', label=f'S1x_k{k}_seed{seed}'))
+    for c in (0.75, 0.5, 0.25):
+        cases.append(dict(spec=('CAP', roads, c), family='S4', label=f'S4a roads only cap {c}'))
+        cases.append(dict(spec=('CAP', art, c), family='S4', label=f'S4b roads only cap {c}'))
+    with _pool() as pool:
+        res = pool.map(run_case, cases, chunksize=1)
+    pd.DataFrame(res).to_parquet(f'{OUT}/noconn.parquet', index=False)
+    d = pd.DataFrame(res); s1 = d[d.family == 'S1']
+    print('S1 roads only: runs with unserved demand', (s1.unmet_share > 0).sum(), '/', len(s1), 'median', s1.tstt_ratio.median().round(3), 'max', s1.tstt_ratio.max().round(3))
+    print(d[d.family == 'S4'][['label', 'tstt_ratio', 'accessibility_loss']].round(3).to_string())
+
+
+def stage_msa():
+    g = json.load(open(f'{OUT}/s2_greedy.json'))['chosen']
+    art = json.load(open(f'{OUT}/arterial_ids.json'))
+    scen = {'S2 top-1': dict(spec=('REM', g[:1])), 'S2 top-3': dict(spec=('REM', g[:3])), 'S3 flood r=3 km': dict(spec=('S3', 3.0, 1.0)),
+            'S4b cap 0.5': dict(spec=('CAP', art, 0.5)), 'S1 k=5 seed 1': dict(spec=('S1', 5, 1)),
+            'S5 demand x1.4': dict(spec=('S0',), theta=dict(demand_factor=1.4))}
+    cases = []
+    for lab, c in scen.items():
+        for rule in ('FW', 'MSA'):
+            cases.append(dict(c, label=lab, rule=rule, maxit=20000, theta={**c.get('theta', {}), 'gap': 1e-3}))
+    with _pool() as pool:
+        res = pool.map(run_case, cases, chunksize=1)
+    d = pd.DataFrame(res); d.to_parquet(f'{OUT}/msa.parquet', index=False)
+    print(d[['label', 'rule', 'tstt_ratio', 'tt_served_ratio', 'unmet_share', 'iters', 'secs']].round(4).to_string())
 
 
 def stage_smoke():
