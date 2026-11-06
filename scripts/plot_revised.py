@@ -251,7 +251,7 @@ def f6():
 
 # ------------------------------------------------------------------------- F8
 LAB = {'demand_factor': 'Demand multiplier (0.8-1.4)', 'bpr_alpha': 'BPR α (0.15-0.50)', 'bpr_power': 'BPR β (2-6)',
-       'radius_km': 'Flood radius (1-5 km)', 'severity': 'Flood depth (25-100%)', 'gap': 'Solver gap (1e-4-1e-2)'}
+       'radius_km': 'Flood radius (1-5 km)', 'severity': 'Flood depth (25-100%)', 'gap': 'Solver gap (1e-4 to 1e-2)'}
 
 
 def f8():
