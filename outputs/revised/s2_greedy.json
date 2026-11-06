@@ -1,0 +1,41 @@
+{
+ "chosen": [
+  "(92,91)",
+  "(115,114)",
+  "(211,210)",
+  "(169,168)",
+  "(192,191)"
+ ],
+ "log": [
+  {
+   "step": 1,
+   "link": "(92,91)",
+   "tstt_ratio": 308977.6830502348,
+   "note": "single-link rank 1"
+  },
+  {
+   "step": 2,
+   "link": "(115,114)",
+   "tstt_ratio": 1.3179735456585198,
+   "note": "greedy, connectivity-preserving"
+  },
+  {
+   "step": 3,
+   "link": "(211,210)",
+   "tstt_ratio": 1.3938586419499854,
+   "note": "greedy, connectivity-preserving"
+  },
+  {
+   "step": 4,
+   "link": "(169,168)",
+   "tstt_ratio": 1.465444974168465,
+   "note": "greedy, connectivity-preserving"
+  },
+  {
+   "step": 5,
+   "link": "(192,191)",
+   "tstt_ratio": 1.5321726764162904,
+   "note": "greedy, connectivity-preserving"
+  }
+ ]
+}
