@@ -195,7 +195,7 @@ def f4():
         runs, st = [], rk[0]
         for u, v in zip(rk, rk[1:] + [None]):
             if v != u + 1:
-                runs.append(str(st) if st == u else f'{st}–{u}'); st = v
+                runs.append(str(st) if st == u else f'{st}-{u}'); st = v
         lab = ', '.join(runs)
         axm.annotate(lab, (np.mean([p[1] for p in g]), np.mean([p[2] for p in g])), xytext=(0, 6), textcoords='offset points',
                      fontsize=11, ha='center', fontweight='bold', zorder=6, bbox=dict(boxstyle='round,pad=0.1', fc=SURFACE, ec='none', alpha=0.9))
@@ -250,8 +250,8 @@ def f6():
 
 
 # ------------------------------------------------------------------------- F8
-LAB = {'demand_factor': 'Demand multiplier (0.8–1.4)', 'bpr_alpha': 'BPR α (0.15–0.50)', 'bpr_power': 'BPR β (2–6)',
-       'radius_km': 'Flood radius (1–5 km)', 'severity': 'Flood depth (25–100%)', 'gap': 'Solver gap (1e-4–1e-2)'}
+LAB = {'demand_factor': 'Demand multiplier (0.8-1.4)', 'bpr_alpha': 'BPR α (0.15-0.50)', 'bpr_power': 'BPR β (2-6)',
+       'radius_km': 'Flood radius (1-5 km)', 'severity': 'Flood depth (25-100%)', 'gap': 'Solver gap (1e-4-1e-2)'}
 
 
 def f8():
@@ -320,7 +320,7 @@ def f13():
     sweep = n[(n.rule == 'FW') & (n.iters > 1)].drop_duplicates(['label', 'gap'])
     cols = {'S3 flood r=3 km': (PAL['S3'], 'Flood, r = 3 km'), 'S2 top-3 closure': (PAL['S2'], 'Top-3 link closure'),
             'S4b arterial cap 0.5': (PAL['S4'], 'S4b busiest links, cap 0.5'), 'baseline (no disruption)': (PAL['S0'], 'Baseline, absolute travel time')}
-    note = ('Panels A and B: Frank–Wolfe solver gap ε swept from 1e-2 to 1e-5; errors are relative to the ε = 1e-5 solution, and impact ratios are '
+    note = ('Panels A and B: Frank-Wolfe solver gap ε swept from 1e-2 to 1e-5; errors are relative to the ε = 1e-5 solution, and impact ratios are '
             'paired with a baseline solved at the same ε. Panel C: impact ratio at ε = 1e-4 against a single assignment iteration with no '
             'equilibrium, each paired with a baseline from the same method; the printed value is the single-iteration ratio relative to full equilibrium.')
     fig, gs, axl = make([2.35], 3, [1, 1, 1.0], note, legend_rows=2, extra=0.8)

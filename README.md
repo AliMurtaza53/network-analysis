@@ -34,6 +34,40 @@ This project solves traffic assignment problems where travelers choose routes to
 - **Implementation Comparison**: Side-by-side benchmarking of algorithm variants
 - **Standard Format**: TNTP (Transportation Network Test Problem) format support
 
+## Resilience analysis (TNTP Anaheim)
+
+The `resilience/` package and `scripts/` build on the equilibrium solver to study disruption scenarios, link criticality, recovery and sensitivity on the Anaheim network.
+
+**Setup**
+
+```bash
+pip install -r requirements.txt
+```
+
+**Reproduce the revised analysis** (data go to `outputs/revised/`, about 1 to 2 hours on 4 cores)
+
+```bash
+python scripts/run_revision.py q2 recovery q3 numerical uncert
+python scripts/plot_revised.py        # figures F3, F4, F6, F8, F10, F13 in outputs/revised/figures/
+```
+
+| Stage | What it runs |
+|---|---|
+| `q2` | 80 scenarios (random, greedy targeted, flood, capacity loss, demand surge) against paired baselines |
+| `recovery` | 90-day recovery curves with linear capacity restoration |
+| `q3` | one-at-a-time sweep and Morris screening (flood and closure reference disruptions) |
+| `numerical` | solver gap sweep and single-iteration comparison |
+| `uncert` | BPR parameter ranges used for error bars in F3 |
+
+**Where to read results**
+
+- `docs/KEY_RESULTS_REVISED.md`: verified numbers, what changed from the first draft, limits
+- `docs/Q1_methods.md`: model and metric definitions
+- `docs/references.bib`: BibTeX for cited works
+- `outputs/revised/`: data tables (Parquet, JSON) and figures (PNG and PDF)
+
+Figures use a serif font (Times New Roman if installed, otherwise Liberation Serif). Older outputs in `outputs/q2` and `outputs/q3` come from the first draft and are superseded.
+
 ## Quick Start
 
 ### Development Workflow

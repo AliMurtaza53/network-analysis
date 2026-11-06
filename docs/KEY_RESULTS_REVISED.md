@@ -1,4 +1,4 @@
-# Revised key results (supersedes docs/Q2_results.md and docs/Q3_sensitivity.md and the first Word draft)
+# Revised key results (supersedes the earlier Q2 and Q3 notes and the first Word draft)
 
 Everything below is from `scripts/run_revision.py` (data in `outputs/revised/`) and `scripts/plot_revised.py`
 (figures in `outputs/revised/figures/`). Every impact ratio is paired: the disrupted network is compared with a baseline

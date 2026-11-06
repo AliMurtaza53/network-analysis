@@ -5,7 +5,7 @@
 The transport network is modelled as a directed graph G = (N, A) where N is the
 set of nodes and A the set of directed links. Each link a ∈ A has free-flow travel
 time t_a⁰ (min), capacity u_a (veh/h), and flow f_a (veh/h). The Anaheim TNTP
-benchmark provides |N| = 416 nodes, |A| = 914 links, and 38 origin–destination
+benchmark provides |N| = 416 nodes, |A| = 914 links, and 38 origin-destination
 (OD) zones with total demand q = 104,694 veh/h.
 
 ## Link Performance Function (BPR)
@@ -35,9 +35,9 @@ Equivalently, UE is the unique minimiser of the Beckmann objective:
 
 subject to flow conservation constraints and f_a ≥ 0.
 
-## Solution Algorithm (Frank–Wolfe)
+## Solution Algorithm (Frank-Wolfe)
 
-The Frank–Wolfe (linearised decomposition) method solves UE iteratively:
+The Frank-Wolfe (linearised decomposition) method solves UE iteratively:
 
 1. **Initialisation**: load all demand by All-or-Nothing (AON) assignment on
    free-flow shortest paths.
@@ -62,13 +62,13 @@ UE from the perturbed network:
 
 | Family | Mechanism |
 |--------|-----------|
-| S1 – Random closure | Remove k links uniformly at random (k ~ Uniform{1,5}) |
-| S2 – Targeted closure | Remove top-k links by baseline flow (k = 1, 3, 5) |
-| S3 – Flood footprint | Pregnolato et al. (2017) depth–speed function applied to links within radius r of a flood centre; speed reduction increases FFT and reduces capacity proportionally |
-| S4 – Corridor loss | Reduce capacity of all links in a designated corridor by factor c (c = 0.25, 0.50, 0.75) |
-| S5 – Demand surge | Scale all OD demands by factor d (d = 1.2, 1.4); two variants combined with S2 or S4 |
+| S1 - Random closure | Remove k links uniformly at random (k ~ Uniform{1,5}) |
+| S2 - Targeted closure | Close k links chosen greedily (each step adds the link that most raises total travel time, keeping all zones connected), k = 1, 3, 5 |
+| S3 - Flood footprint | Pregnolato et al. (2017) depth-speed function applied to links within radius r of a flood centre; speed reduction increases FFT and reduces capacity proportionally |
+| S4 - Capacity loss | Cut capacity to a fraction c of normal (0.75, 0.50, 0.25) on all links (S4a) or on the busiest 10% of links (S4b) |
+| S5 - Demand surge | Scale all OD demands by factor d (d = 1.2, 1.4); combined with a flood or the S2 top-3 closure |
 
-**Pregnolato depth–speed function** (S3):
+**Pregnolato depth-speed function** (S3):
 
     v(w) = 0.0009·w² − 0.5529·w + 86.9448    [km/h, w in mm, R² = 0.95]
 
